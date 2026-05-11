@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>副业作战中心</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f0f1a;--card:#1a1a2e;--card2:#16213e;--accent:#7f5af0;--accent2:#2cb5e8;--gold:#f5a623;--green:#2ecc71;--red:#e74c3c;--orange:#f39c12;--text:#e0e0e0;--text2:#a0a0b0;--text3:#606080;--border:#2a2a4a;--radius:12px}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ===== 粒子 ===== */
+#particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999}
+.particle{position:absolute;border-radius:50%;pointer-events:none}
+
+/* ===== 成就弹窗 ===== */
+#ach-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid var(--gold);border-radius:20px;padding:28px 36px;text-align:center;z-index:10000;box-shadow:0 0 60px rgba(245,166,35,0.3);transition:transform .4s cubic-bezier(.175,.885,.32,1.275),opacity .4s;opacity:0;pointer-events:none}
+#ach-popup.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+#ach-popup .a-icon{font-size:44px;display:block;margin-bottom:10px}
+#ach-popup .a-title{font-size:17px;font-weight:700;color:var(--gold);margin-bottom:4px}
+#ach-popup .a-desc{font-size:13px;color:var(--text2)}
+
+/* ===== Toast ===== */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#333;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:10001;opacity:0;transition:all .3s;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== 顶部栏 ===== */
+.top-bar{background:linear-gradient(135deg,#1a1a2e,#16213e);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;position:relative}
+.avatar .lv{position:absolute;bottom:-2px;right:-2px;background:var(--gold);color:#000;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px}
+.p-info{flex:1;min-width:0}
+.p-name{font-size:15px;font-weight:700;color:#fff}
+.p-title{font-size:11px;color:var(--accent2)}
+.xp-wrap{width:120px;flex-shrink:0}
+.xp-lbl{font-size:10px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:2px}
+.xp-track{width:100%;height:7px;background:#0a0a1a;border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.xp-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width .6s}
+.streak{display:flex;align-items:center;gap:4px;background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.25);padding:5px 10px;border-radius:16px;flex-shrink:0}
+.streak-fire.hot{animation:fire .6s ease-in-out infinite alternate}
+@keyframes fire{to{transform:scale(1.3)}}
+.streak-n{font-size:14px;font-weight:700;color:var(--gold)}
+
+/* ===== 导航栏 ===== */
+.nav-bar{display:flex;gap:0;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:69px;z-index:99;overflow-x:auto}
+.nav-bar::-webkit-scrollbar{display:none}
+.nav-btn{flex:1;min-width:70px;padding:10px 6px;text-align:center;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
+.nav-btn.active{border-bottom-color:var(--accent);background:rgba(127,90,240,.08)}
+.nav-btn .ni{font-size:18px;display:block;margin-bottom:1px}
+.nav-btn .nl{font-size:11px;color:var(--text2)}
+.nav-btn.active .nl{color:var(--accent);font-weight:600}
+
+/* ===== 页面容器 ===== */
+.page{display:none;padding:16px;padding-bottom:90px}
+.page.active{display:block}
+
+/* ===== 任务页面 ===== */
+.input-section{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.input-section h3{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.input-row{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.input-row label{font-size:12px;color:var(--text2);min-width:70px;flex-shrink:0}
+.input-row input,.input-row select{flex:1;min-width:100px;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;font-size:13px;outline:none}
+.input-row input:focus,.input-row select:focus{border-color:var(--accent)}
+.input-row input[type=number]{width:80px;flex:none}
+.btn-sm{padding:6px 14px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:active{opacity:.8;transform:scale(.96)}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:active{opacity:.8;transform:scale(.96)}
+
+/* 任务组 */
+.task-group{margin-bottom:14px}
+.grp-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--card2);border-radius:var(--radius);cursor:pointer;user-select:none;transition:background .2s}
+.grp-hdr:active{background:#1e2a4a}
+.grp-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.grp-count{font-size:11px;color:var(--text3)}
+.grp-arrow{font-size:11px;color:var(--text3);transition:transform .3s}
+.grp-arrow.open{transform:rotate(180deg)}
+.grp-body{padding:3px 0;overflow:hidden;max-height:0;transition:max-height .3s ease}
+.grp-body.open{max-height:5000px}
+
+/* 任务行 */
+.t-row{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--card);border-radius:10px;margin-bottom:5px;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.t-row:active{transform:scale(.98)}
+.t-row.done{opacity:.4}
+.t-ck{width:22px;height:22px;border:2px solid var(--border);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.t-row:hover .t-ck{border-color:var(--accent)}
+.t-ck.on{background:var(--accent);border-color:var(--accent)}
+.t-ck.on::after{content:"✓";color:#fff;font-size:13px;font-weight:700}
+.t-info{flex:1;min-width:0}
+.t-name{font-size:13px;font-weight:500;line-height:1.4;transition:all .2s}
+.t-name.done{text-decoration:line-through;color:var(--text3)}
+.t-tags{display:flex;gap:5px;margin-top:3px;flex-wrap:wrap}
+.tag{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:500}
+.tag-xp{background:rgba(245,166,35,.12);color:var(--gold)}
+.tag-time{background:rgba(44,181,232,.12);color:var(--accent2)}
+.t-id{font-size:10px;color:var(--text3);flex-shrink:0}
+
+/* 赛季进度 */
+.season-card{padding:12px 14px;background:var(--card2);border-radius:var(--radius);margin-bottom:12px}
+.season-hdr{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.season-track{width:100%;height:6px;background:#0a0a1a;border-radius:3px;overflow:hidden;margin-bottom:4px}
+.season-bar{height:100%;border-radius:3px;transition:width .5s}
+.season-nums{font-size:11px;color:var(--text2);display:flex;justify-content:space-between}
+
+/* 日常进度 */
+.daily-card{padding:12px 14px;background:var(--card2);border-radius:var(--radius);margin-bottom:14px}
+.daily-tip{text-align:center;padding:16px;font-size:12px;color:var(--text3);line-height:1.8;background:var(--card);border-radius:var(--radius);margin-top:10px}
+
+/* ===== 统计卡片 ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat-card{text-align:center;padding:12px 6px;background:var(--card2);border-radius:10px}
+.stat-v{font-size:20px;font-weight:700}
+.stat-v.purple{color:var(--accent)}
+.stat-v.gold{color:var(--gold)}
+.stat-v.blue{color:var(--accent2)}
+.stat-l{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* 徽章 */
+.badge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.badge{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;position:relative;cursor:pointer;transition:all .2s}
+.badge.on{background:rgba(127,90,240,.15);border:1px solid rgba(127,90,240,.3)}
+.badge.off{background:rgba(255,255,255,.03);border:1px solid var(--border);filter:grayscale(1);opacity:.3}
+.badge:active{transform:scale(.9)}
+.badge .tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#222;color:#fff;font-size:10px;padding:4px 10px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;z-index:10}
+.badge:hover .tip,.badge:active .tip{opacity:1}
+
+/* 日历 */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-cell{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;background:rgba(255,255,255,.02)}
+.cal-cell.d1{background:rgba(127,90,240,.25)}
+.cal-cell.d2{background:rgba(127,90,240,.45)}
+.cal-cell.d3{background:rgba(127,90,240,.65)}
+.cal-cell.today{outline:2px solid var(--accent);outline-offset:1px}
+.cal-lbl{font-size:10px;color:var(--text3);text-align:center;padding:3px 0}
+
+/* 周统计 */
+.week-bars{display:flex;align-items:flex-end;gap:5px;height:80px;padding-top:8px}
+.wk-col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end}
+.wk-bar{width:100%;max-width:30px;border-radius:4px 4px 0 0;min-height:4px;transition:height .4s;position:relative}
+.wk-val{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text2);font-weight:600;white-space:nowrap}
+.wk-day{font-size:10px;color:var(--text3);margin-top:5px}
+.wk-day.today{color:var(--accent);font-weight:600}
+
+/* ===== 素材库页面 ===== */
+.mat-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.mat-tab{padding:6px 14px;border-radius:16px;font-size:12px;cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text2);transition:all .2s}
+.mat-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* 素材输入区 */
+.mat-input{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.mat-input h3{font-size:14px;font-weight:600;margin-bottom:12px}
+.mat-field{margin-bottom:10px}
+.mat-field label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px}
+.mat-field input,.mat-field textarea,.mat-field select{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+.mat-field input:focus,.mat-field textarea:focus{border-color:var(--accent)}
+.mat-field textarea{min-height:80px;resize:vertical}
+.mat-field .hint{font-size:10px;color:var(--text3);margin-top:2px}
+.mat-btn-row{display:flex;gap:8px;margin-top:12px}
+.mat-btn{flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.mat-btn:active{transform:scale(.97);opacity:.85}
+.mat-btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.mat-btn.secondary{background:var(--card2);color:var(--text2);border:1px solid var(--border)}
+
+/* 素材列表 */
+.mat-list{display:flex;flex-direction:column;gap:8px}
+.mat-item{background:var(--card);border-radius:var(--radius);padding:14px;border:1px solid var(--border);transition:all .2s}
+.mat-item:active{border-color:var(--accent)}
+.mat-item-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.mat-item-title{font-size:14px;font-weight:600;flex:1;min-width:0;word-break:break-all}
+.mat-item-type{font-size:10px;padding:2px 8px;border-radius:8px;flex-shrink:0;margin-left:8px;font-weight:500}
+.type-select{background:rgba(127,90,240,.15);color:var(--accent)}
+.type-copy{background:rgba(44,181,232,.15);color:var(--accent2)}
+.type-visual{background:rgba(245,166,35,.15);color:var(--gold)}
+.type-bgm{background:rgba(0,200,150,.15);color:#00C896}
+.type-structure{background:rgba(255,100,180,.15);color:#FF64B4}
+.mat-item-content{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:6px;word-break:break-all;max-height:60px;overflow:hidden}
+.mat-item-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:10px;color:var(--text3)}
+.mat-item-meta .tag-sm{background:rgba(255,255,255,.05);padding:2px 6px;border-radius:4px}
+.mat-del{background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;padding:4px 8px;border-radius:6px;opacity:.5;transition:opacity .2s}
+.mat-del:hover{opacity:1}
+.mat-item-url{font-size:11px;color:var(--accent2);word-break:break-all;margin-bottom:4px}
+.mat-item-url a{color:var(--accent2);text-decoration:none}
+
+/* 空状态 */
+.empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px;line-height:1.8}
+.empty .empty-icon{font-size:40px;margin-bottom:12px;opacity:.3}
+
+/* 连接状态 */
+.conn-status{display:flex;align-items:center;gap:6px;font-size:11px;padding:8px 14px;border-radius:8px;margin-bottom:14px}
+.conn-status.ok{background:rgba(46,204,113,.1);color:var(--green)}
+.conn-status.err{background:rgba(231,76,60,.1);color:var(--red)}
+.conn-dot{width:6px;height:6px;border-radius:50%}
+.conn-status.ok .conn-dot{background:var(--green)}
+.conn-status.err .conn-dot{background:var(--red)}
+
+/* ===== 同步按钮 ===== */
+.sync-btn{display:block;width:100%;padding:11px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:var(--radius);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:14px}
+.sync-btn:active{transform:scale(.97);opacity:.85}
+
+/* ===== 响应式 ===== */
+@media(min-width:900px){
+  .page{max-width:1100px;margin:0 auto}
+  .xp-wrap{width:180px}
+}
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+<div id="ach-popup">
+  <span class="a-icon" id="ap-icon"></span>
+  <div class="a-title" id="ap-title"></div>
+  <div class="a-desc" id="ap-desc"></div>
+</div>
+<div id="toast"></div>
+
+<!-- 顶部栏 -->
+<div class="top-bar">
+  <div class="avatar"><span>🎮</span><span class="lv" id="el-lv">Lv.1</span></div>
+  <div class="p-info">
+    <div class="p-name">副业玩家</div>
+    <div class="p-title" id="el-title">新手编导</div>
+  </div>
+  <div class="xp-wrap">
+    <div class="xp-lbl"><span id="el-xp">0 XP</span><span id="el-xplv">Lv.1→2</span></div>
+    <div class="xp-track"><div class="xp-fill" id="el-xpbar" style="width:0"></div></div>
+  </div>
+  <div class="streak">
+    <span class="streak-fire" id="el-fire">🔥</span>
+    <span class="streak-n" id="el-streak">0天</span>
+  </div>
+</div>
+
+<!-- 导航栏 -->
+<div class="nav-bar">
+  <div class="nav-btn active" data-page="tasks" onclick="switchPage('tasks')">
+    <span class="ni">📋</span><span class="nl">任务</span>
+  </div>
+  <div class="nav-btn" data-page="stats" onclick="switchPage('stats')">
+    <span class="ni">📊</span><span class="nl">统计</span>
+  </div>
+  <div class="nav-btn" data-page="materials" onclick="switchPage('materials')">
+    <span class="ni">📚</span><span class="nl">素材库</span>
+  </div>
+</div>
+
+<!-- ===== 任务页 ===== -->
+<div class="page active" id="page-tasks">
+  <div id="tasks-tabs" class="mat-tabs"></div>
+  <div id="tasks-input"></div>
+  <div id="tasks-list"></div>
+</div>
+
+<!-- ===== 统计页 ===== -->
+<div class="page" id="page-stats">
+  <div class="stats-grid" id="stats-summary"></div>
+  <div style="background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">🏆 成就徽章</div>
+    <div class="badge-grid" id="badge-grid"></div>
+  </div>
+  <div style="background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">📅 打卡日历</div>
+    <div id="cal-wrap"></div>
+  </div>
+  <div style="background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">📈 本周统计</div>
+    <div class="week-bars" id="week-bars"></div>
+  </div>
+  <button class="sync-btn" onclick="syncToFeishu()">☁️ 同步所有数据到飞书</button>
+</div>
+
+<!-- ===== 素材库页 ===== -->
+<div class="page" id="page-materials">
+  <div class="conn-status err" id="mat-conn">
+    <span class="conn-dot"></span>
+    <span id="mat-conn-text">未连接代理服务</span>
+  </div>
+
+  <div style="background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:10px">✏️ 收集新素材</h3>
+    <div class="mat-field">
+      <label>素材标题 *</label>
+      <input id="mat-title" placeholder="输入素材标题或粘贴内容（自动识别）">
+      <div class="hint">直接粘贴一段文字会自动填入内容区</div>
+    </div>
+    <div class="mat-field">
+      <label>素材类型</label>
+      <select id="mat-type">
+        <option value="标题/选题">标题/选题</option>
+        <option value="文案金句">文案金句</option>
+        <option value="视觉参考">视觉参考</option>
+        <option value="BGM">BGM</option>
+        <option value="文案结构">文案结构</option>
+      </select>
+    </div>
+    <div class="mat-field">
+      <label>来源平台</label>
+      <select id="mat-platform">
+        <option value="手动输入">手动输入</option>
+        <option value="小红书">小红书</option>
+        <option value="抖音">抖音</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div class="mat-field">
+      <label>来源链接</label>
+      <input id="mat-url" placeholder="粘贴笔记/视频链接（可选）">
+    </div>
+    <div class="mat-field">
+      <label>内容/正文</label>
+      <textarea id="mat-content" placeholder="粘贴文案、金句、或笔记正文内容..."></textarea>
+    </div>
+    <div class="mat-field">
+      <label>标签（逗号分隔）</label>
+      <input id="mat-tags" placeholder="如：选题,爆款标题,育儿">
+    </div>
+    <div class="mat-field">
+      <label>备注</label>
+      <input id="mat-note" placeholder="可选备注">
+    </div>
+    <div class="mat-btn-row">
+      <button class="mat-btn primary" onclick="saveMaterial()">💾 保存素材</button>
+      <button class="mat-btn secondary" onclick="clearMatForm()">清空</button>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:14px;font-weight:600">📚 我的素材 <span id="mat-count" style="color:var(--text3);font-size:12px"></span></div>
+    <div class="mat-tabs" id="mat-filter" style="margin-bottom:0"></div>
+  </div>
+  <div class="mat-list" id="mat-list"></div>
+</div>
+
+<script>
+// ==================== 配置 ====================
+const PROXY = "http://127.0.0.1:8765";
+const KEY = "side_hustle_v4";
+const TODAY_KEY = "sh_today_v4";
+
+// ==================== 工具函数 ====================
+function $(id){return document.getElementById(id)}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function loadData(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d._v===4)return d}catch(e){}return defaultData()}
+function defaultData(){return{_v:4,xp:0,streak:0,lastDate:null,achievements:[],calendar:{},doneTasks:{},maxDaily:0,seasonDone:{},followers:0,posts:0}}
+function save(d){localStorage.setItem(KEY,JSON.stringify(d))}
+function loadToday(){try{const d=JSON.parse(localStorage.getItem(TODAY_KEY));if(d&&d.date===todayStr())return d.ids||[]}catch(e){}return[]}
+function saveToday(ids){localStorage.setItem(TODAY_KEY,JSON.stringify({date:todayStr(),ids}))}
+function getYesterday(s){const d=new Date(s+'T12:00:00');d.setDate(d.getDate()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+let data = loadData();
+let todayDone = loadToday();
+let currentPage = 'tasks';
+let currentTaskTab = 'daily';
+
+// ==================== 称号系统 ====================
+const TITLES = [
+  [1,"新手编导"],[3,"进阶创作者"],[6,"资深编导"],
+  [10,"副业达人"],[20,"自媒体高手"],[35,"副业大神"]
+];
+function getLevel(xp){let lv=1,need=0;while(xp>=need+lv*500){need+=lv*500;lv++}return{inLv:xp-need,need:lv*500,lv}}
+function getTitle(lv){let t="新手编导";for(const[l,n]of TITLES)if(lv>=l)t=n;return t}
+
+// ==================== 成就系统 ====================
+const ACHIEVEMENTS = [
+  {id:"first",icon:"🎯",name:"迈出第一步",desc:"完成第一个任务",check:()=>Object.keys(data.doneTasks).length>=1},
+  {id:"streak3",icon:"🔥",name:"三连击",desc:"连续打卡3天",check:()=>data.streak>=3},
+  {id:"streak7",icon:"♨️",name:"一周达人",desc:"连续打卡7天",check:()=>data.streak>=7},
+  {id:"streak30",icon:"💎",name:"月度坚持",desc:"连续打卡30天",check:()=>data.streak>=30},
+  {id:"fans100",icon:"👥",name:"百粉达成",desc:"粉丝达到100",check:()=>data.followers>=100},
+  {id:"fans1k",icon:"🌟",name:"千粉达成",desc:"粉丝达到1000",check:()=>data.followers>=1000},
+  {id:"fans1w",icon:"⭐",name:"万粉达成",desc:"粉丝达到10000",check:()=>data.followers>=10000},
+  {id:"fans10w",icon:"👑",name:"十万大V",desc:"粉丝达到100000",check:()=>data.followers>=100000},
+  {id:"post10",icon:"📝",name:"创作新星",desc:"累计发布10篇作品",check:()=>data.posts>=10},
+  {id:"post50",icon:"✍️",name:"高产创作者",desc:"累计发布50篇作品",check:()=>data.posts>=50},
+  {id:"daily5",icon:"⚡",name:"效率爆表",desc:"单日完成5个任务",check:()=>data.maxDaily>=5},
+  {id:"mat20",icon:"📚",name:"素材收藏家",desc:"素材库收集20条",check:()=>(data.materialCount||0)>=20},
+];
+
+function checkAchievements(){
+  ACHIEVEMENTS.forEach(a=>{
+    if((data.achievements||[]).includes(a.id))return;
+    if(a.check()){
+      if(!data.achievements)data.achievements=[];
+      data.achievements.push(a.id);
+      showAch(a.icon,a.name,a.desc);
+    }
+  });
+  save(data);
+}
+
+function showAch(icon,title,desc){
+  $('ap-icon').textContent=icon;
+  $('ap-title').textContent=title;
+  $('ap-desc').textContent=desc;
+  $('ach-popup').classList.add('show');
+  setTimeout(()=>$('ach-popup').classList.remove('show'),2000);
+  for(let i=0;i<3;i++)setTimeout(()=>spawnP(),i*200);
+}
+
+function toast(msg){
+  const t=$('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ==================== 粒子 ====================
+function spawnP(e){
+  const c=$('particles');
+  const colors=['#7f5af0','#2cb5e8','#f5a623','#2ecc71','#e74c3c','#f39c12'];
+  const cx=e&&e.clientX?e.clientX:innerWidth/2;
+  const cy=e&&e.clientY?e.clientY:innerHeight/2;
+  for(let i=0;i<16;i++){
+    const p=document.createElement('div');p.className='particle';
+    const sz=Math.random()*7+3,a=Math.random()*Math.PI*2,v=Math.random()*70+30;
+    const dx=Math.cos(a)*v,dy=Math.sin(a)*v;
+    p.style.cssText='width:'+sz+'px;height:'+sz+'px;background:'+colors[i%6]+';left:'+cx+'px;top:'+cy+'px;opacity:1;transition:all .7s ease-out';
+    c.appendChild(p);
+    requestAnimationFrame(()=>{p.style.left=(cx+dx)+'px';p.style.top=(cy+dy)+'px';p.style.opacity='0';p.style.transform='scale(.2)'});
+    setTimeout(()=>{if(p.parentNode)p.remove()},800);
+  }
+}
+
+// ==================== 页面切换 ====================
+function switchPage(pg){
+  currentPage=pg;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  $('page-'+pg).classList.add('active');
+  document.querySelector('[data-page="'+pg+'"]').classList.add('active');
+  if(pg==='tasks')renderTasks();
+  else if(pg==='stats')renderStats();
+  else if(pg==='materials'){checkProxy();renderMaterials()}
+}
+
+// ==================== 任务系统 ====================
+// 成就任务：粉丝里程碑 + 一次性任务
+function getAchieveTasks(){
+  const milestones=[];
+  const fans=data.followers||0;
+  [100,1000,10000,100000].forEach((n,i)=>{
+    const prev=i>0?[100,1000,10000][i-1]:0;
+    milestones.push({id:'FM'+n,name:n+'粉丝',desc:prev>0?prev+'→'+n+'粉丝里程碑':'0→'+n+'粉丝',cat:'achieve',xp:n>=10000?200:n>=1000?100:50,group:'粉丝里程碑',milestone:n,done:fans>=n});
+  });
+  const oneTime=[
+    {id:"S1",name:"想好小红书昵称",cat:"achieve",xp:30,group:"账号基建"},
+    {id:"S2",name:"注册/完善小红书账号",cat:"achieve",xp:30,group:"账号基建"},
+    {id:"S3",name:"想好抖音昵称",cat:"achieve",xp:30,group:"账号基建"},
+    {id:"S4",name:"注册/完善抖音账号",cat:"achieve",xp:30,group:"账号基建"},
+    {id:"S5",name:"手机自拍头像",cat:"achieve",xp:20,group:"账号基建"},
+    {id:"S6",name:"存3个小红书封面模板",cat:"achieve",xp:30,group:"账号基建"},
+    {id:"S7",name:"简介加上39元账号诊断",cat:"achieve",xp:20,group:"账号基建"},
+    {id:"O1",name:"搭建爆款选题库",cat:"achieve",xp:30,group:"基建优化"},
+    {id:"O2",name:"建立内容排期表",cat:"achieve",xp:30,group:"基建优化"},
+    {id:"O3",name:"设计抖音+小红书联动方案",cat:"achieve",xp:30,group:"基建优化"},
+  ];
+  oneTime.forEach(t=>t.done=!!data.doneTasks[t.id]);
+  return [...milestones,...oneTime];
+}
+
+// 赛季任务
+function getSeasonTasks(){
+  const posts=data.posts||0;
+  const matCount=data.materialCount||0;
+  const seasons=[
+    {id:1,name:"赛季1：起步积累",color:"#7f5af0",tasks:[
+      {id:"SP1",name:"累计发布3篇作品",cat:"season",xp:20,season:1,group:"发布目标",target:3,metric:'posts',done:posts>=3},
+      {id:"SP2",name:"累计发布10篇作品",cat:"season",xp:50,season:1,group:"发布目标",target:10,metric:'posts',done:posts>=10},
+      {id:"SM1",name:"素材库收集10条",cat:"season",xp:20,season:1,group:"素材积累",target:10,metric:'materials',done:matCount>=10},
+      {id:"SM2",name:"素材库收集30条",cat:"season",xp:50,season:1,group:"素材积累",target:30,metric:'materials',done:matCount>=30},
+      {id:"SM3",name:"素材库收集100条",cat:"season",xp:100,season:1,group:"素材积累",target:100,metric:'materials',done:matCount>=100},
+    ]},
+    {id:2,name:"赛季2：稳定输出",color:"#2cb5e8",tasks:[
+      {id:"SP3",name:"累计发布30篇作品",cat:"season",xp:80,season:2,group:"发布目标",target:30,metric:'posts',done:posts>=30},
+      {id:"SP4",name:"累计发布100篇作品",cat:"season",xp:200,season:2,group:"发布目标",target:100,metric:'posts',done:posts>=100},
+      {id:"SM4",name:"素材库收集200条",cat:"season",xp:80,season:2,group:"素材积累",target:200,metric:'materials',done:matCount>=200},
+    ]},
+    {id:3,name:"赛季3：破圈成长",color:"#f5a623",tasks:[
+      {id:"SP5",name:"累计发布300篇作品",cat:"season",xp:300,season:3,group:"发布目标",target:300,metric:'posts',done:posts>=300},
+      {id:"SP6",name:"累计发布1000篇作品",cat:"season",xp:500,season:3,group:"发布目标",target:1000,metric:'posts',done:posts>=1000},
+    ]},
+  ];
+  return seasons;
+}
+
+// 日常任务
+function getDailyTasks(){
+  return [
+    {id:"D1",name:"选题研究（找3个选题灵感）",cat:"daily",xp:5,group:"内容创作",time:"15-20分钟"},
+    {id:"D2",name:"写文案/脚本",cat:"daily",xp:10,group:"内容创作",time:"30-60分钟"},
+    {id:"D3",name:"拍摄/录制素材",cat:"daily",xp:10,group:"内容创作",time:"20-40分钟"},
+    {id:"D4",name:"剪辑/后期",cat:"daily",xp:10,group:"内容创作",time:"20-40分钟"},
+    {id:"D5",name:"发布作品",cat:"daily",xp:3,group:"发布运营",time:"5分钟"},
+    {id:"D6",name:"回复评论/私信",cat:"daily",xp:3,group:"发布运营",time:"5-10分钟"},
+    {id:"D7",name:"收集素材（标题/文案/灵感）",cat:"daily",xp:5,group:"素材积累",time:"10分钟"},
+    {id:"D8",name:"数据分析（看昨天数据）",cat:"daily",xp:3,group:"发布运营",time:"5分钟"},
+  ];
+}
+
+function renderTasks(){
+  // 任务tab
+  const tabs=[
+    {id:'achieve',label:'🏆 成就'},
+    {id:'season',label:'🌟 赛季'},
+    {id:'daily',label:'📅 日常'},
+  ];
+  const tabsEl=$('tasks-tabs');
+  tabsEl.innerHTML='';
+  tabs.forEach(t=>{
+    const el=document.createElement('div');
+    el.className='mat-tab'+(currentTaskTab===t.id?' active':'');
+    el.textContent=t.label;
+    el.onclick=()=>{currentTaskTab=t.id;renderTasks()};
+    tabsEl.appendChild(el);
+  });
+
+  const inputEl=$('tasks-input');
+  const listEl=$('tasks-list');
+  inputEl.innerHTML='';
+  listEl.innerHTML='';
+
+  if(currentTaskTab==='achieve') renderAchieveTab(inputEl,listEl);
+  else if(currentTaskTab==='season') renderSeasonTab(inputEl,listEl);
+  else renderDailyTab(inputEl,listEl);
+}
+
+function renderAchieveTab(inputEl,listEl){
+  // 粉丝数输入
+  inputEl.innerHTML=`
+    <div class="input-section">
+      <h3>📊 输入你的粉丝数（小红书 + 抖音取最高）</h3>
+      <div class="input-row">
+        <label>当前粉丝</label>
+        <input type="number" id="inp-followers" value="${data.followers||0}" min="0" placeholder="输入粉丝数">
+        <button class="btn-sm btn-accent" onclick="updateFollowers()">更新</button>
+      </div>
+    </div>
+  `;
+  const tasks=getAchieveTasks();
+  const groups={};
+  tasks.forEach(t=>{(groups[t.group]||(groups[t.group]=[])).push(t)});
+  Object.entries(groups).forEach(([g,ts])=>{
+    const done=ts.filter(t=>t.done).length;
+    listEl.appendChild(makeGroup(g,ts,done,ts.length));
+  });
+}
+
+function renderSeasonTab(inputEl,listEl){
+  inputEl.innerHTML=`
+    <div class="input-section">
+      <h3>📊 更新你的数据</h3>
+      <div class="input-row">
+        <label>累计发布作品</label>
+        <input type="number" id="inp-posts" value="${data.posts||0}" min="0">
+        <button class="btn-sm btn-accent" onclick="updatePosts()">更新</button>
+      </div>
+    </div>
+  `;
+  const seasons=getSeasonTasks();
+  seasons.forEach(se=>{
+    const done=se.tasks.filter(t=>t.done).length;
+    const card=document.createElement('div');
+    card.className='season-card';
+    card.innerHTML=`
+      <div class="season-hdr"><span style="color:${se.color}">${se.name}</span></div>
+      <div class="season-track"><div class="season-bar" style="width:${done/se.tasks.length*100}%;background:${se.color}"></div></div>
+      <div class="season-nums"><span>${done}/${se.tasks.length}</span><span>${Math.round(done/se.tasks.length*100)}%</span></div>
+    `;
+    listEl.appendChild(card);
+    const g=makeGroup(se.name,se.tasks,done,se.tasks.length);
+    listEl.appendChild(g);
+    if(done===se.tasks.length&&!data.seasonDone[se.id]){
+      data.seasonDone[se.id]=true;
+      save(data);
+      showAch('🎉','赛季'+se.id+'完成！','继续努力！');
+    }
+  });
+}
+
+function renderDailyTab(inputEl,listEl){
+  checkDailyReset();
+  const tasks=getDailyTasks();
+  const doneCount=tasks.filter(t=>data.doneTasks[t.id]).length;
+  const card=document.createElement('div');
+  card.className='daily-card';
+  card.innerHTML=`
+    <div class="season-hdr"><span style="color:var(--green)">今日日常</span></div>
+    <div class="season-track"><div class="season-bar" style="width:${doneCount/tasks.length*100}%;background:var(--green)"></div></div>
+    <div class="season-nums"><span>${doneCount}/${tasks.length}</span><span>+${todayDone.length*5} XP</span></div>
+  `;
+  listEl.appendChild(card);
+  const groups={};
+  tasks.forEach(t=>{(groups[t.group]||(groups[t.group]=[])).push(t)});
+  Object.entries(groups).forEach(([g,ts])=>{
+    listEl.appendChild(makeGroup(g,ts,ts.filter(t=>data.doneTasks[t.id]).length,ts.length,true));
+  });
+  const tip=document.createElement('div');
+  tip.className='daily-tip';
+  tip.innerHTML='💡 日常任务每天零点自动重置<br>真正的难点在选题、文案、拍摄——发布反而最简单';
+  listEl.appendChild(tip);
+}
+
+function makeGroup(name,tasks,done,total,isDaily){
+  const wrap=document.createElement('div');wrap.className='task-group';
+  const hdr=document.createElement('div');hdr.className='grp-hdr';
+  hdr.innerHTML=`<div class="grp-title"><span>${name}</span> <span class="grp-count">${done}/${total}</span></div><span class="grp-arrow open">▼</span>`;
+  const body=document.createElement('div');body.className='grp-body open';
+  tasks.forEach(t=>{
+    const d=t.done||(isDaily&&data.doneTasks[t.id]);
+    const row=document.createElement('div');
+    row.className='t-row'+(d?' done':'');
+    row.innerHTML=`
+      <div class="t-ck${d?' on':''}"></div>
+      <div class="t-info">
+        <div class="t-name${d?' done':''}">${t.name}</div>
+        <div class="t-tags">${t.time?`<span class="tag tag-time">⏱ ${t.time}</span>`:''}<span class="tag tag-xp">+${t.xp} XP</span></div>
+      </div>
+      <div class="t-id">${t.id}</div>
+    `;
+    if(t.milestone||t.target){
+      // 成就/赛季指标型任务——自动判定，不需要手动勾选
+      row.style.cursor='default';
+      row.style.opacity=d?'0.5':'0.7';
+    }else{
+      row.onclick=(e)=>{
+        e.preventDefault();
+        if(data.doneTasks[t.id]){
+          delete data.doneTasks[t.id];
+          todayDone=todayDone.filter(x=>x!==t.id);
+          data.xp=Math.max(0,(data.xp||0)-t.xp);
+        }else{
+          data.doneTasks[t.id]=Date.now();
+          todayDone.push(t.id);
+          data.xp=(data.xp||0)+t.xp;
+          spawnP(e);
+          checkAchievements();
+          if(todayDone.length>(data.maxDaily||0))data.maxDaily=todayDone.length;
+        }
+        data.calendar[todayStr()]=[...todayDone];
+        save(data);saveToday(todayDone);
+        renderTasks();updateTopBar();
+      };
+    }
+    body.appendChild(row);
+  });
+  let open=true;
+  hdr.onclick=()=>{
+    open=!open;
+    body.classList.toggle('open',open);
+    hdr.querySelector('.grp-arrow').classList.toggle('open',open);
+  };
+  wrap.appendChild(hdr);wrap.appendChild(body);
+  return wrap;
+}
+
+// ==================== 数据输入 ====================
+function updateFollowers(){
+  const v=parseInt($('inp-followers').value)||0;
+  data.followers=v;save(data);
+  checkAchievements();
+  toast('粉丝数已更新为 '+v);
+  renderTasks();updateTopBar();
+}
+function updatePosts(){
+  const v=parseInt($('inp-posts').value)||0;
+  data.posts=v;save(data);
+  checkAchievements();
+  toast('发布作品数已更新为 '+v);
+  renderTasks();updateTopBar();
+}
+
+// ==================== 日常重置 ====================
+function checkDailyReset(){
+  const today=todayStr();
+  if(data.lastDate===today)return;
+  if(data.lastDate){
+    const yd=getYesterday(data.lastDate);
+    if((data.calendar[yd]||[]).length>0)data.streak=(data.streak||0)+1;
+    else data.streak=0;
+  }
+  getDailyTasks().forEach(t=>delete data.doneTasks[t.id]);
+  todayDone=[];
+  data.lastDate=today;
+  data.calendar[today]=[];
+  save(data);saveToday(todayDone);
+}
+
+// ==================== 统计页 ====================
+function renderStats(){
+  const totalDone=Object.keys(data.doneTasks||{}).length;
+  $('stats-summary').innerHTML=`
+    <div class="stat-card"><div class="stat-v gold">${data.xp||0}</div><div class="stat-l">累计XP</div></div>
+    <div class="stat-card"><div class="stat-v purple">${totalDone}</div><div class="stat-l">完成任务</div></div>
+    <div class="stat-card"><div class="stat-v blue">${(data.achievements||[]).length}/${ACHIEVEMENTS.length}</div><div class="stat-l">成就解锁</div></div>
+  `;
+  // 徽章
+  const grid=$('badge-grid');grid.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    const on=(data.achievements||[]).includes(a.id);
+    const el=document.createElement('div');
+    el.className='badge '+(on?'on':'off');
+    el.innerHTML=`<span>${a.icon}</span><span class="tip">${a.name}: ${a.desc}</span>`;
+    grid.appendChild(el);
+  });
+  renderCalendar();
+  renderWeekBars();
+}
+
+function renderCalendar(){
+  const w=$('cal-wrap');w.innerHTML='';
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+  const fd=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),td=todayStr();
+  let h='<div style="font-size:13px;font-weight:600;margin-bottom:6px">'+y+'年'+(m+1)+'月</div>';
+  h+='<div class="cal-grid">';
+  ['日','一','二','三','四','五','六'].forEach(d=>h+='<div class="cal-lbl">'+d+'</div>');
+  for(let i=0;i<fd;i++)h+='<div class="cal-cell"></div>';
+  for(let d=1;d<=dim;d++){
+    const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const c=(data.calendar[ds]||[]).length;
+    let cls='cal-cell';
+    if(c>0){cls+=' d'+(c>=5?'3':c>=3?'2':'1');}
+    if(ds===td)cls+=' today';
+    h+='<div class="'+cls+'" title="'+ds+': '+c+'个任务">'+d+'</div>';
+  }
+  h+='</div>';
+  w.innerHTML=h;
+}
+
+function renderWeekBars(){
+  const w=$('week-bars');w.innerHTML='';
+  const dn=['日','一','二','三','四','五','六'],td=todayStr(),now=new Date();
+  for(let i=6;i>=0;i--){
+    const d=new Date(now);d.setDate(d.getDate()-i);
+    const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const c=(data.calendar[ds]||[]).length;
+    const col=document.createElement('div');col.className='wk-col';
+    const bar=document.createElement('div');bar.className='wk-bar';bar.style.position='relative';
+    bar.style.height=Math.max(c*12,4)+'px';
+    bar.style.background=c>=5?'var(--accent)':c>=3?'var(--accent2)':c>0?'var(--text3)':'rgba(255,255,255,.05)';
+    if(c>0)bar.innerHTML='<span class="wk-val">'+c+'</span>';
+    col.appendChild(bar);
+    const lbl=document.createElement('div');lbl.className='wk-day'+(ds===td?' today':'');
+    lbl.textContent=dn[d.getDay()];col.appendChild(lbl);w.appendChild(col);
+  }
+}
+
+// ==================== 素材库 ====================
+let materialsCache=[];
+let matFilterType='all';
+let proxyOk=false;
+
+async function checkProxy(){
+  try{
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), 3000);
+    const r = await fetch(PROXY+'/api/status', {signal: controller.signal});
+    clearTimeout(timer);
+    const j = await r.json();
+    proxyOk = j.status === 'ok';
+  }catch(e){
+    proxyOk = false;
+    console.warn('[checkProxy]', e.message);
+  }
+  const el=$('mat-conn');
+  el.className='conn-status '+(proxyOk?'ok':'err');
+  $('mat-conn-text').textContent=proxyOk?'已连接飞书代理服务':'未连接代理服务（启动 feishu_proxy.py）';
+  if(proxyOk)loadMaterials();
+}
+
+async function loadMaterials(){
+  try{
+    const r=await fetch(PROXY+'/api/materials');
+    const j=await r.json();
+    materialsCache=j.materials||[];
+    data.materialCount=materialsCache.length;
+    save(data);
+    renderMaterials();
+  }catch(e){toast('加载素材失败')}
+}
+
+function renderMaterials(){
+  const types=['all','标题/选题','文案金句','视觉参考','BGM','文案结构'];
+  const fEl=$('mat-filter');
+  fEl.innerHTML='';
+  types.forEach(t=>{
+    const el=document.createElement('div');
+    el.className='mat-tab'+(matFilterType===t?' active':'');
+    el.textContent=t==='all'?'全部':t;
+    el.onclick=()=>{matFilterType=t;renderMaterials()};
+    fEl.appendChild(el);
+  });
+
+  const list=(matFilterType==='all'?materialsCache:materialsCache.filter(m=>m.type===matFilterType));
+  $('mat-count').textContent='('+list.length+'条)';
+
+  const el=$('mat-list');
+  if(list.length===0){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📭</div>还没有素材<br>开始收集你的第一条素材吧</div>';
+    return;
+  }
+  el.innerHTML='';
+  list.forEach(m=>{
+    const typeMap={'标题/选题':'type-select','文案金句':'type-copy','视觉参考':'type-visual','BGM':'type-bgm','文案结构':'type-structure'};
+    const typeCls=typeMap[m.type]||'type-visual';
+    const item=document.createElement('div');item.className='mat-item';
+    let h=`<div class="mat-item-hdr"><div class="mat-item-title">${esc(m.title||'(无标题)')}</div><span class="mat-item-type ${typeCls}">${m.type||'未知'}</span></div>`;
+    if(m.content)h+=`<div class="mat-item-content">${esc(m.content)}</div>`;
+    if(m.url)h+=`<div class="mat-item-url"><a href="${esc(m.url)}" target="_blank">${esc(m.url)}</a></div>`;
+    h+=`<div class="mat-item-meta">`;
+    if(m.platform)h+=`<span class="tag-sm">${esc(m.platform)}</span>`;
+    if(m.tags)h+=`<span class="tag-sm">${esc(m.tags)}</span>`;
+    if(m.time)h+=`<span class="tag-sm">${fmtTime(m.time)}</span>`;
+    h+=`</div>`;
+    h+=`<button class="mat-del" onclick="delMaterial('${m.id}')">删除</button>`;
+    item.innerHTML=h;
+    el.appendChild(item);
+  });
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function fmtTime(ts){
+  if(!ts)return '';
+  if(typeof ts==='number'){
+    // ts 可能是秒或毫秒，统一转成毫秒
+    var ms = ts>1e12 ? ts : ts*1000;
+    return new Date(ms).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  }
+  return String(ts);
+}
+
+async function saveMaterial(){
+  if(!proxyOk){toast('请先启动飞书代理服务');return}
+  const title=$('mat-title').value.trim();
+  if(!title){toast('请输入素材标题');return}
+  const body={
+    title:title,
+    type:$('mat-type').value,
+    platform:$('mat-platform').value,
+    url:$('mat-url').value.trim(),
+    content:$('mat-content').value.trim(),
+    tags:$('mat-tags').value.trim(),
+    note:$('mat-note').value.trim(),
+  };
+  try{
+    const r=await fetch(PROXY+'/api/materials',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
+    });
+    const j=await r.json();
+    if(j.ok){
+      toast('素材已保存到飞书');
+      clearMatForm();
+      loadMaterials();
+      checkAchievements();
+    }else{toast('保存失败: '+(j.error||'未知错误'))}
+  }catch(e){toast('网络错误')}
+}
+
+async function delMaterial(id){
+  if(!proxyOk)return;
+  if(!confirm('确定删除这条素材？'))return;
+  try{
+    const r=await fetch(PROXY+'/api/materials/delete',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({record_id:id})
+    });
+    const j=await r.json();
+    if(j.ok){toast('已删除');loadMaterials()}
+    else toast('删除失败');
+  }catch(e){toast('网络错误')}
+}
+
+function clearMatForm(){
+  ['mat-title','mat-url','mat-content','mat-tags','mat-note'].forEach(id=>$(id).value='');
+  $('mat-type').value='标题/选题';
+  $('mat-platform').value='手动输入';
+}
+
+// 粘贴自动识别：如果粘贴了URL则自动选平台，粘贴了长文本则填入内容区
+$('mat-title').addEventListener('paste',function(e){
+  setTimeout(()=>{
+    const v=this.value.trim();
+    if(v.match(/xiaohongshu|xhs\.link|xhslink/)){$('mat-platform').value='小红书';$('mat-url').value=v;this.value='';}
+    else if(v.match(/douyin|tiktok|v\.douyin/)){$('mat-platform').value='抖音';$('mat-url').value=v;this.value='';}
+    else if(v.length>50&&!v.match(/^https?:\/\//)){$('mat-content').value=v;this.value='';}
+  },50);
+});
+
+// ==================== 同步 ====================
+async function syncToFeishu(){
+  toast('正在同步到飞书...');
+  try{
+    console.log('[sync] 开始同步...');
+    // 初始化表
+    const t0=await fetch(PROXY+'/api/init-tables',{method:'POST'});
+    if(!t0.ok)throw new Error('初始化表失败: HTTP'+t0.status);
+    console.log('[sync] init-tables OK');
+
+    // 同步玩家数据
+    const playerData={xp:data.xp||0,followers:data.followers||0,posts:data.posts||0,streak:data.streak||0,materialCount:data.materialCount||0};
+    console.log('[sync] 同步玩家数据:', playerData);
+    for(const[k,v]of Object.entries(playerData)){
+      try{
+        await fetch(PROXY+'/api/player-data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:v})});
+      }catch(e){console.warn('[sync] player-data 失败:',k,e.message)}
+    }
+
+    // 同步任务记录
+    const records=[];
+    Object.entries(data.doneTasks||{}).forEach(([id,ts])=>{
+      const t=findTaskById(id);
+      if(!t)return;
+      ts=Number(ts);
+      if(ts<=0)return;
+      // 确保时间戳是毫秒（飞书日期字段要求毫秒）
+      const tsMs=ts>1e12?ts:ts*1000;
+      // 分类映射：daily→日常, season→赛季, achieve→成就
+      const catMap={daily:'日常',season:'赛季',achieve:'成就'};
+      // 赛季编号
+      let season='-';
+      if(t.season) season=String(t.season);
+      records.push({
+        "任务ID":id,
+        "任务名称":t.name,
+        "分类":catMap[t.cat]||'日常',
+        "赛季":season,
+        "获得XP":t.xp,
+        "完成时间":tsMs,
+      });
+    });
+    console.log('[sync] 准备同步',records.length,'条任务记录');
+    if(records.length>0){
+      console.log('[sync] 前3条预览:', JSON.stringify(records.slice(0,3)));
+    }
+
+    if(records.length>0){
+      const r2=await fetch(PROXY+'/api/task-sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({records})});
+      const j2=await r2.json();
+      console.log('[sync] task-sync 响应:', JSON.stringify(j2));
+      if(!j2.ok)throw new Error('任务同步失败: '+JSON.stringify(j2));
+      toast('同步完成！新建'+j2.written+'条，更新'+j2.updated+'条');
+    }else{
+      toast('同步完成！暂无任务记录需要同步');
+    }
+    console.log('[sync] 全部完成！');
+  }catch(e){
+    toast('同步失败: '+e.message);
+    console.error('[sync] 错误:', e);
+  }
+}
+
+function findTaskById(id){
+  const all=[...getAchieveTasks(),...getSeasonTasks().flatMap(s=>s.tasks),...getDailyTasks()];
+  return all.find(t=>t.id===id);
+}
+
+// ==================== 顶部栏更新 ====================
+function updateTopBar(){
+  const lv=getLevel(data.xp||0);
+  $('el-lv').textContent='Lv.'+lv.lv;
+  $('el-title').textContent=getTitle(lv.lv);
+  $('el-xp').textContent=(data.xp||0)+' XP';
+  $('el-xplv').textContent='Lv.'+lv.lv+' → Lv.'+(lv.lv+1);
+  $('el-xpbar').style.width=(lv.inLv/lv.need*100)+'%';
+  $('el-streak').textContent=(data.streak||0)+'天';
+  const f=$('el-fire');
+  if((data.streak||0)>=7)f.classList.add('hot');else f.classList.remove('hot');
+}
+
+// ==================== 初始化 ====================
+function init(){
+  checkDailyReset();
+  renderTasks();
+  updateTopBar();
+  checkAchievements();
+}
+init();
+</script>
+</body>
+</html>
